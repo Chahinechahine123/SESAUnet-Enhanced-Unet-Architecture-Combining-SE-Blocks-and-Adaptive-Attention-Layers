@@ -41,15 +41,15 @@ if __name__ == "__main__":
     tf.random.set_seed(42)
 
     """ Directory for storing files """
-    create_dir("/content/drive/MyDrive/SESAUnet_Testresult")
+    create_dir("/SESAUnet_Testresult")
 
     """ Loading model """
     with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss}):
-        model = tf.keras.models.load_model("/content/drive/MyDrive/SESAUnet/SESAUnet.keras")
+        model = tf.keras.models.load_model("SESAUnet/SESAUnet.keras")
 
     """ Load the dataset """
-    test_x = sorted(glob(os.path.join("/content/data", "test", "image", "*")))
-    test_y = sorted(glob(os.path.join("/content/data", "test", "mask", "*")))
+    test_x = sorted(glob(os.path.join("/data", "test", "image", "*")))
+    test_y = sorted(glob(os.path.join("/data", "test", "mask", "*")))
     print(f"Test: {len(test_x)} - {len(test_y)}")
 
     """ Evaluation and Prediction """
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         y_pred = y_pred.astype(np.int32)
 
         """ Saving the prediction """
-        save_image_path = f"/content/drive/MyDrive/SESAUnet_Testresult/{name}.png"
+        save_image_path = f"/SESAUnet_Testresult/{name}.png"
         save_results(image, mask, y_pred, save_image_path)
 
         """ Flatten the array """
@@ -101,4 +101,4 @@ if __name__ == "__main__":
     print(f"Precision: {score[4]:0.5f}")
 
     df = pd.DataFrame(SCORE, columns=["Image", "Accuracy", "F1", "IoU", "Recall", "Precision"])
-    df.to_csv("/content/drive/MyDrive/SESAUnet/Testscore.csv")
+    df.to_csv("/SESAUnet/Testscore.csv")
