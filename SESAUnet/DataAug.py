@@ -2,23 +2,23 @@ import cv2
 import numpy as np
 import os
 
-# Chemins des dossiers d'images et de masques
-image_folder = "C:/Users/MSI/Desktop/train/image"
-mask_folder = "C:/Users/MSI/Desktop/train/mask"
-output_image_folder = "C:/Users/MSI/Desktop/aug/img"
-output_mask_folder = "C:/Users/MSI/Desktop/aug/mask"
+# Data Folders
+image_folder = "/train/image"
+mask_folder = "train/mask"
+output_image_folder = "/aug/img"
+output_mask_folder = "/aug/mask"
 
-# Création des dossiers de sortie si nécessaires
+
 os.makedirs(output_image_folder, exist_ok=True)
 os.makedirs(output_mask_folder, exist_ok=True)
 
-# Paramètres d'augmentation
+# Augmentation Parameters
 gaussian_blur_kernel = (5, 5)
-illumination_change = (-25, 25)  # Variation d'illumination
+illumination_change = (-25, 25)  # illumination Variation
 zoom_in_factor = 1.2
 zoom_out_factor = 0.8
 
-# Fonction pour appliquer une transformation et sauvegarder l'image et le masque
+
 def apply_augmentation(image, mask, technique, filename):
     augmented_image, augmented_mask = image.copy(), mask.copy()
 
@@ -54,27 +54,27 @@ def apply_augmentation(image, mask, technique, filename):
         canvas_mask[start_y:start_y + zoomed_mask.shape[0], start_x:start_x + zoomed_mask.shape[1]] = zoomed_mask
         augmented_image, augmented_mask = canvas_image, canvas_mask
 
-    # Sauvegarde des résultats
+    # results save
     cv2.imwrite(os.path.join(output_image_folder, f"{filename}.jpg"), augmented_image)
     cv2.imwrite(os.path.join(output_mask_folder, f"{filename}.jpg"), augmented_mask)
 
-# Techniques à appliquer en boucle
+# Loop 
 techniques = ["gaussian_blur", "illumination", "zoom_in", "zoom_out"]
 technique_count = len(techniques)
 image_files = sorted([f for f in os.listdir(image_folder) if f.endswith(".jpg")])
 
-# Parcours des images et masques
+
 start_index = 1051
 
 for i, image_file in enumerate(image_files):
     image_path = os.path.join(image_folder, image_file)
     mask_path = os.path.join(mask_folder, image_file)
 
-    # Lecture de l'image et du masque
+    
     image = cv2.imread(image_path)
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)  # Masque en niveaux de gris
 
-    # Application de la technique d'augmentation
+   
     technique = techniques[i % technique_count]
     apply_augmentation(image, mask, technique, start_index)
 
