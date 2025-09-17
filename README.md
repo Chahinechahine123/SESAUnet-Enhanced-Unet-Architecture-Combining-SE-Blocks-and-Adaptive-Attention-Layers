@@ -1,4 +1,4 @@
-# SESAUnet: A Deep Attention-Based Segmentation Model for Early Detection of Green Aphids in Smart Greenhouse Environments
+# SESAUnet: Enhanced U-Net Architecture Combining SE Blocks and Adaptive Attention Layers
 
 ## Overview
 This repository implements **SESAUnet**, a novel deep learning segmentation model designed for early-stage pest detection in precision agriculture, with a focus on green aphids (*Aphis gossypii*). Built upon the U-Net architecture, SESAUnet enhances feature extraction and localization by integrating **Squeeze-and-Excitation (SE) blocks** in the encoder to recalibrate channel-wise features and a **spatial attention mechanism** at the decoder output to refine segmentation in complex, cluttered environments. This addresses key challenges in detecting small, low-contrast pests that blend with foliage, enabling timely interventions to reduce crop losses, pesticide usage, and environmental impact.
