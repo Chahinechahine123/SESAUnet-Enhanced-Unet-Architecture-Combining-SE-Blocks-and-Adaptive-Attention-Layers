@@ -10,26 +10,9 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import Recall, Precision
 import numpy as np
 from tensorflow.keras import backend as K
-from simplemodel import build_unet
+from  SESAUnet import build_SESAUnet
+from metrics import iou, total_loss
 
-def iou(y_true, y_pred):
-    def f(y_true, y_pred):
-        intersection = (y_true * y_pred).sum()
-        union = y_true.sum() + y_pred.sum() - intersection
-        x = (intersection + 1e-15) / (union + 1e-15)
-        x = x.astype(np.float32)
-        return x
-    return tf.numpy_function(f, [y_true, y_pred], tf.float32)
-
-smooth = 1e-15
-def dice_coef(y_true, y_pred):
-    y_true = tf.keras.layers.Flatten()(y_true)
-    y_pred = tf.keras.layers.Flatten()(y_pred)
-    intersection = tf.reduce_sum(y_true * y_pred)
-    return (2. * intersection + smooth) / (tf.reduce_sum(y_true) + tf.reduce_sum(y_pred) + smooth)
-
-def dice_loss(y_true, y_pred):
-    return 1.0 - dice_coef(y_true, y_pred)
 H = 512
 W = 512
 
@@ -95,7 +78,7 @@ if __name__ == "__main__":
     """ Hyperparameters """
     batch_size = 4
     lr = 1e-4
-    num_epochs = 10
+    num_epochs = 50
     model_path = os.path.join("UnetModel", "model.keras")
     csv_path = os.path.join("UnetModel", "data.csv")
 
@@ -115,13 +98,13 @@ if __name__ == "__main__":
     valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size)
 
     """ Model """
-    model = build_unet((H, W, 3))
+    model = build_SESAUnet((H, W, 3))
 
 
     recall = Recall()
     precision = Precision()
     metrics = [iou,Recall(), Precision()]
-    model.compile(loss=dice_loss, optimizer=Adam(learning_rate=lr), metrics=metrics)
+    model.compile(loss=total_loss, optimizer=Adam(learning_rate=lr), metrics=metrics)
 
     callbacks = [
         ModelCheckpoint(model_path, verbose=1, save_best_only=True),

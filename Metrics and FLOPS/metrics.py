@@ -13,6 +13,7 @@ def iou(y_true, y_pred):
     return tf.numpy_function(f, [y_true, y_pred], tf.float32)
 
 smooth = 1e-15
+
 def dice_coef(y_true, y_pred):
     y_true = tf.keras.layers.Flatten()(y_true)
     y_pred = tf.keras.layers.Flatten()(y_pred)
@@ -21,3 +22,12 @@ def dice_coef(y_true, y_pred):
 
 def dice_loss(y_true, y_pred):
     return 1.0 - dice_coef(y_true, y_pred)
+
+# Binary Cross Entropy Loss
+def bce_loss(y_true, y_pred):
+    bce = tf.keras.losses.BinaryCrossentropy()
+    return bce(y_true, y_pred)
+
+# Combined Loss (BCE + Dice)
+def total_loss(y_true, y_pred):
+    return bce_loss(y_true, y_pred) + dice_loss(y_true, y_pred)

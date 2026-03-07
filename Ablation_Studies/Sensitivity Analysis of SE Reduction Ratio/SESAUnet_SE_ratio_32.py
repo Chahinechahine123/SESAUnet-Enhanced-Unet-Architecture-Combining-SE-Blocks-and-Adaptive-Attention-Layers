@@ -1,10 +1,10 @@
 from tensorflow.keras.layers import (
     Conv2D, BatchNormalization, Activation, MaxPool2D, Conv2DTranspose, Concatenate, Input,
-    GlobalAveragePooling2D, Reshape, Multiply, Add, Lambda
-)
+    GlobalAveragePooling2D, Reshape, Multiply, Add,Lambda)
 from tensorflow.keras.models import Model
 from tensorflow.keras import backend as K
-def squeeze_and_excitation(input, ratio=16, name_prefix="se"):
+
+def squeeze_and_excitation(input, ratio=32, name_prefix="se"):
     # Squeeze
     channel_axis = -1
     filters = input.shape[channel_axis]
@@ -43,9 +43,8 @@ def decoder_block(input, skip_features, num_filters, block_name):
     x = conv_block(x, num_filters, block_name=block_name)
     return x
 
-
 def adaptive_attention(input_tensor, name_prefix="attention"):
-    # Attention Spatiale 
+    # Attention Spatiale : Utilise à la fois le pooling moyen et le pooling maximum
     avg_pool = Lambda(lambda x: K.mean(x, axis=-1, keepdims=True),
                       name=f"{name_prefix}_avg_pool")(input_tensor)
     max_pool = Lambda(lambda x: K.max(x, axis=-1, keepdims=True),
@@ -54,14 +53,15 @@ def adaptive_attention(input_tensor, name_prefix="attention"):
     # Concatenate along the channel axis
     concat = Concatenate(axis=-1, name=f"{name_prefix}_concat")([avg_pool, max_pool])
 
-    #  convolution 7x7 
+    # Appliquer une convolution 7x7 pour générer la carte d'attention spatiale
     attention = Conv2D(filters=1, kernel_size=(7, 7), padding='same',
                        activation='sigmoid', name=f"{name_prefix}_conv")(concat)
 
-    # Multiplication 
+    # Multiplication élément par élément de l'attention avec l'entrée
     output = Multiply(name=f"{name_prefix}_multiply")([input_tensor, attention])
 
     return output
+
 
 def build_SESAUnet(input_shape):
     inputs = Input(input_shape, name="input_layer")

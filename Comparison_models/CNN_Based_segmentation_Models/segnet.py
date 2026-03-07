@@ -7,6 +7,9 @@ from tensorflow.keras.layers import (
 from tensorflow.keras.models import Model
 import tensorflow as tf
 
+import tensorflow as tf
+from keras.layers import Layer
+
 class MaxPoolingWithArgmax2D(Layer):
     def __init__(self, pool_size=(2, 2), strides=(2, 2), padding='same', **kwargs):
         super(MaxPoolingWithArgmax2D, self).__init__(**kwargs)
@@ -19,7 +22,7 @@ class MaxPoolingWithArgmax2D(Layer):
         padding = self.padding
         pool_size = self.pool_size
         strides = self.strides
-        if K.backend() == 'tensorflow':
+        if tf.keras.backend.backend() == 'tensorflow':
             ksize = [1, pool_size[0], pool_size[1], 1]
             padding = padding.upper()
             strides = [1, strides[0], strides[1], 1]
@@ -30,9 +33,10 @@ class MaxPoolingWithArgmax2D(Layer):
                     padding=padding)
         else:
             errmsg = '{} backend is not supported for layer {}'.format(
-                    K.backend(), type(self).__name__)
+                    tf.keras.backend.backend(), type(self).__name__)
             raise NotImplementedError(errmsg)
-        argmax = K.cast(argmax, K.floatx())
+        # Fix: Use tf.cast instead of K.cast
+        argmax = tf.cast(argmax, tf.float32)
         return [output, argmax]
 
     def compute_output_shape(self, input_shape):
@@ -48,6 +52,8 @@ class MaxPoolingWithArgmax2D(Layer):
     def compute_mask(self, inputs, mask=None):
         print("no idea what this is: but computing mask")
         return 2 * [None]
+
+
 
 class MaxUnpooling2D(Layer):
     def __init__(self, size=(2, 2), **kwargs):

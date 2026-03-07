@@ -1,60 +1,190 @@
-# SESAUnet: Enhanced U-Net Architecture Combining SE Blocks and Adaptive Attention Layers
+# SESAUnet: Attention-Enhanced U-Net for Early Aphid Segmentation in Precision Agriculture
 
 ## Overview
-This repository implements **SESAUnet**, a novel deep learning segmentation model designed for early-stage pest detection in precision agriculture, with a focus on green aphids (*Aphis gossypii*). Built upon the U-Net architecture, SESAUnet enhances feature extraction and localization by integrating **Squeeze-and-Excitation (SE) blocks** in the encoder to recalibrate channel-wise features and a **spatial attention mechanism** at the decoder output to refine segmentation in complex, cluttered environments. This addresses key challenges in detecting small, low-contrast pests that blend with foliage, enabling timely interventions to reduce crop losses, pesticide usage, and environmental impact.
+This repository provides the official implementation of **SESAUnet**, an attention-enhanced U-Net architecture designed for the **early detection of green aphids (*Aphis gossypii*) in greenhouse environments**.
 
-The model is tailored for real-time deployment in smart greenhouses, offering superior performance over traditional object detection methods (e.g., YOLO, Faster R-CNN) by providing pixel-level granularity. Experimental results demonstrate that SESAUnet outperforms state-of-the-art segmentation models like U-Net, DeepLabV3+, FCN8s, and SegNet, achieving an Intersection over Union (IoU) of 0.804 and a precision of 0.912 on a custom dataset of early aphid infestations.
+Detecting aphids during early infestation is extremely challenging due to:
+- their **small size (≈1–2 mm)**,
+- **low contrast** with plant foliage,
+- **sparse distribution** across leaf surfaces.
 
-This work contributes to sustainable agriculture by providing a scalable, AI-based solution for automated pest monitoring. The repository includes the core model implementation, training scripts, data augmentation utilities, and evaluation tools for benchmarking against baseline models.
+To address these challenges, **SESAUnet** integrates:
 
-## Key Features
-- **Enhanced Architecture**: Combines SE blocks for channel attention and spatial attention for precise localization of small objects in noisy agricultural scenes.
-- **Data Augmentation**: Domain-specific augmentations (e.g., noise simulation, lighting variations, scale changes) to improve model robustness.
-- **Evaluation Suite**: Scripts to compare SESAUnet with U-Net, SegNet, DeepLabV3+, and FCN8s using metrics like IoU, precision, recall, and F1-score.
-- **Real-World Focus**: Validated on high-resolution images from pepper greenhouses, capturing early infestation phases rarely addressed in existing datasets.
-- **Open-Source Resources**: Full code and a public dataset to promote reproducibility and further research in precision agriculture.
+- **Squeeze-and-Excitation (SE) blocks** in the encoder to recalibrate channel-wise feature responses.
+- **Spatial Attention (SA)** at the decoder output to refine spatial localization of small pests.
 
-## Dataset
-A core contribution of this project is a high-resolution dataset specifically curated for early-stage green aphid detection. The dataset consists of images manually collected from real pepper greenhouses during the initial infestation phase, where aphids are sparse, small (1-2 mm), and visually similar to plant foliage. This underrepresented scenario includes complex backgrounds, variable illumination, and visual clutter, making it ideal for training robust AI models.
+This architecture improves segmentation accuracy in cluttered agricultural scenes while preserving the computational efficiency of standard U-Net.
 
-- **Size and Composition**: The dataset includes [1,838 images] with pixel-level annotations for aphid segmentation.
-- **Annotations**: Fine-grained masks created using tools  VGG Image Annotator, focusing on precise boundaries.
-- **Augmentation**: Applied techniques simulate real-world variations, such as sensor noise, distance-related scaling, and lighting changes.
-- **Access**: The dataset is publicly available on Kaggle for download and use in research.  
-  Link: [https://www.kaggle.com/datasets/chahinebouaziz/green-aphid-early-infestation-dataset](https://www.kaggle.com/datasets/chahinebouaziz/green-aphid-early-infestation-dataset) (Note: Replace with actual link if different; based on project details).
+Extensive experiments demonstrate that **SESAUnet achieves superior performance compared with CNN-based, attention-based, transformer-based, and lightweight segmentation models**, reaching:
 
-This dataset enables reliable training for early-warning systems and can be extended for other pest detection tasks in precision agriculture.
+- **IoU:** 0.836 ± 0.013  
+- **Precision:** 0.921 ± 0.011  
+- **Recall:** 0.847 ± 0.017  
 
-## Repository Structure
+All results are reported as **mean ± standard deviation across five independent runs**.
+
+The repository also includes **extensive experimental studies**, including:
+- architectural ablation experiments,
+- sensitivity analyses,
+- comparison with 15+ segmentation architectures,
+- robustness analysis under noise and illumination variations,
+- cross-dataset generalization experiments.
+
+---
+
+# Key Features
+
+### Enhanced Segmentation Architecture
+SESAUnet combines:
+- **SE channel attention** to strengthen discriminative feature channels.
+- **Spatial attention** to focus on aphid regions within cluttered backgrounds.
+
+### Comprehensive Experimental Evaluation
+The repository includes experiments covering:
+- **CNN-based segmentation models**
+- **Attention-enhanced architectures**
+- **Transformer-based segmentation networks**
+- **Lightweight real-time segmentation models**
+
+### Extensive Ablation Studies
+Experiments validate:
+- attention module placement
+- kernel size selection
+- SE reduction ratio
+- data augmentation sensitivity
+
+### Robustness and Generalization Analysis
+Additional experiments analyze model behavior under:
+- Gaussian noise
+- extreme illumination changes
+- cross-dataset transfer scenarios
+
+### Reproducibility
+The repository includes:
+- training scripts
+- testing pipelines
+- evaluation metrics
+- FLOPs and parameter calculations
+- augmentation pipelines
+
+---
+
+# Dataset
+
+A core contribution of this work is a **high-resolution dataset for early-stage green aphid detection** collected in real greenhouse conditions.
+
+### Dataset Characteristics
+- **1,838 images**
+- pixel-level aphid segmentation masks
+- captured during **early infestation stages**
+- real greenhouse illumination conditions
+- complex foliage backgrounds
+
+### Annotation
+Annotations were generated using **VGG Image Annotator**, producing high-quality semantic segmentation masks.
+
+### Dataset Access
+The dataset is publicly available on Kaggle:
+
+https://www.kaggle.com/datasets/chahinebouaziz/green-aphid-early-infestation-dataset
+
+This dataset supports research on **precision agriculture, pest monitoring, and small-object segmentation**.
+
+---
+
+# Repository Structure
+
 ```
 📂 SESA-UNet
 │
-├── 📂 SESAUNET
-│   ├── DataAug.py       # Utilities for data augmentation (e.g., flips, rotations, noise, brightness adjustments)
-│   ├── metrics.py       # Custom metrics for evaluation (IoU, precision, recall, F1-score)
-│   ├── SESAUnet.py      # Core implementation of the SESAUnet architecture with SE blocks and spatial attention
-│   ├── Train.py         # Script for training SESAUnet on the aphid dataset
+├── 📂 Ablation_Studies
 │
-├── 📂 evaluation
-│   ├── unet.py          # Baseline U-Net implementation for comparison
-│   ├── segnet.py        # Baseline SegNet implementation
-│   ├── fcn8s.py         # Baseline FCN8s implementation
-│   ├── deeplabv3.py     # Baseline DeepLabV3+ implementation
-│   ├── Test.py          # Script for evaluating and comparing models on test data
+│ ├── 📂 Architectural_Ablation_and_Components
+│ │ ├── Unet_sa_decoder_ALLstages
+│ │ ├── Unet_sa_decoder_out
+│ │ ├── Unet_sa_skip_connection
+│ │ ├── Unet_SE_encoder_decoder
+│ │ └── Unet_SE_only_encoder
+│ │
+│ ├── 📂 Sensitivity_Analysis_of_SA_Kernel_Size
+│ │ ├── SESAUnet_3_kernel
+│ │ ├── SESAUnet_5_kernel
+│ │ └── SESAUnet_7_kernel
+│ │
+│ └── 📂 Sensitivity_Analysis_of_SE_Reduction_Ratio
+│ ├── SESAUnet_SE_ratio_8
+│ ├── SESAUnet_SE_ratio_16
+│ └── SESAUnet_SE_ratio_32
 │
-├── README.md            # This documentation file
+├── 📂 Comparaison_Models
+│
+│ ├── 📂 Attention_enhanced_models
+│ │ ├── Attention_unet.py
+│ │ ├── cbam_unet.py
+│ │ ├── transunet.py
+│ │ ├── swin_unet.py
+│ │ └── psnet.py
+│ │
+│ ├── 📂 CNN_Based_segmentation_Models
+│ │ ├── unet.py
+│ │ ├── segnet.py
+│ │ ├── fcn8s.py
+│ │ ├── deeplabv3_resnet50.py
+│ │ ├── deeplabv3_mobilenetv2.py
+│ │ └── convnext_unet.py
+│ │
+│ └── 📂 Lightweight_Models
+│ ├── mobileunet.py
+│ ├── fastscnn.py
+│ └── espnetv2.py
+│
+├── 📂 Data_Augmentation
+│ ├── DataAug.py
+│ └── online_augmentation.py
+│
+├── 📂 Generalization_and_Robustness_Analysis
+│ ├── from_cocoJSON_to_binarymask.py
+│ └── perturbations_on_testSet.py
+│
+├── 📂 Metrics_and_FLOPS
+│ ├── metrics.py
+│ ├── flops_calculation.py
+│ └── prms_memoryFootprint_calculation.py
+│
+├── 📂 SESAUnet
+│ └── SESAUnet.py
+│
+├── 📂 Train_and_Test
+│ ├── train.py
+│ ├── test.py
+│ └── train_with_online_augmentation.py
+│
+└── README.md
 ```
 
-## Installation
-### Prerequisites
-- Python 3.8 or higher
-- TensorFlow 2.17.0
-- Keras 3.4.1
+
+---
+
+# Installation
+
+### Requirements
+
+- Python ≥ 3.8
+- TensorFlow 2.17
+- Keras 3.4
 - NumPy
-- OpenCV (cv2)
+- OpenCV
 - Matplotlib
 - Scikit-learn
-- Albumentations (for advanced data augmentation)
+- Albumentations
+
+### Setup
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Chahinechahine123/SESA-UNet.git
+cd SESA-UNet
 
 ### Setup
 1. Clone the repository:
@@ -94,12 +224,7 @@ This dataset enables reliable training for early-warning systems and can be exte
 
 
 ## Results
-SESAUnet was evaluated on the custom aphid dataset, outperforming baselines:
-- **IoU**: 0.804 (vs. U-Net: 0.752, DeepLabV3+: 0.781, FCN8s: 0.723, SegNet: 0.698)
-- **Precision**: 0.912
-- **Recall**: 0.845
-- **F1-Score**: 0.878
-
+SESAUnet was evaluated on the custom aphid dataset, outperforming baselines
 An ablation study confirms the benefits of SE blocks (improving feature sensitivity) and spatial attention (enhancing localization in cluttered scenes). For full details, refer to the accompanying manuscript.
 
 ## Citation
@@ -108,7 +233,7 @@ If you use SESAUnet or the dataset in your research, please cite:
 @article{bouaziz2025sesaunet,
   title={SESAUnet: A Deep Attention-Based Segmentation Model for Early Detection of Green Aphids in Smart Greenhouse Environments},
   author={Bouaziz, Chahine},
-  year={2025},
+  year={2026},
   journal={TBD}
 }
 ```
