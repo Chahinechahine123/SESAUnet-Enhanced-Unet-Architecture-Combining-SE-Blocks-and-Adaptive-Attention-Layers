@@ -1,4 +1,4 @@
-# SESAUnet: Attention-Enhanced U-Net for Early Aphid Segmentation in Precision Agriculture
+# SESAUnet: A Deep Attention-Based Segmentation Model for Early Detection of Green Aphids in Smart Greenhouse Environments
 
 ## Overview
 This repository provides the official implementation of **SESAUnet**, an attention-enhanced U-Net architecture designed for the **early detection of green aphids (*Aphis gossypii*) in greenhouse environments**.
