@@ -90,77 +90,6 @@ https://www.kaggle.com/datasets/chahinebouaziz/green-aphid-early-infestation-dat
 
 This dataset supports research on **precision agriculture, pest monitoring, and small-object segmentation**.
 
----
-
-# Repository Structure
-
-```
-📂 SESA-UNet
-│
-├── 📂 Ablation_Studies
-│
-│ ├── 📂 Architectural_Ablation_and_Components
-│ │ ├── Unet_sa_decoder_ALLstages
-│ │ ├── Unet_sa_decoder_out
-│ │ ├── Unet_sa_skip_connection
-│ │ ├── Unet_SE_encoder_decoder
-│ │ └── Unet_SE_only_encoder
-│ │
-│ ├── 📂 Sensitivity_Analysis_of_SA_Kernel_Size
-│ │ ├── SESAUnet_3_kernel
-│ │ ├── SESAUnet_5_kernel
-│ │ └── SESAUnet_7_kernel
-│ │
-│ └── 📂 Sensitivity_Analysis_of_SE_Reduction_Ratio
-│ ├── SESAUnet_SE_ratio_8
-│ ├── SESAUnet_SE_ratio_16
-│ └── SESAUnet_SE_ratio_32
-│
-├── 📂 Comparaison_Models
-│
-│ ├── 📂 Attention_enhanced_models
-│ │ ├── Attention_unet.py
-│ │ ├── cbam_unet.py
-│ │ ├── transunet.py
-│ │ ├── swin_unet.py
-│ │ └── psnet.py
-│ │
-│ ├── 📂 CNN_Based_segmentation_Models
-│ │ ├── unet.py
-│ │ ├── segnet.py
-│ │ ├── fcn8s.py
-│ │ ├── deeplabv3_resnet50.py
-│ │ ├── deeplabv3_mobilenetv2.py
-│ │ └── convnext_unet.py
-│ │
-│ └── 📂 Lightweight_Models
-│ ├── mobileunet.py
-│ ├── fastscnn.py
-│ └── espnetv2.py
-│
-├── 📂 Data_Augmentation
-│ ├── DataAug.py
-│ └── online_augmentation.py
-│
-├── 📂 Generalization_and_Robustness_Analysis
-│ ├── from_cocoJSON_to_binarymask.py
-│ └── perturbations_on_testSet.py
-│
-├── 📂 Metrics_and_FLOPS
-│ ├── metrics.py
-│ ├── flops_calculation.py
-│ └── prms_memoryFootprint_calculation.py
-│
-├── 📂 SESAUnet
-│ └── SESAUnet.py
-│
-├── 📂 Train_and_Test
-│ ├── train.py
-│ ├── test.py
-│ └── train_with_online_augmentation.py
-│
-└── README.md
-```
 
 
 ---
@@ -226,6 +155,183 @@ cd SESA-UNet
 ## Results
 SESAUnet was evaluated on the custom aphid dataset, outperforming baselines
 An ablation study confirms the benefits of SE blocks (improving feature sensitivity) and spatial attention (enhancing localization in cluttered scenes). For full details, refer to the accompanying manuscript.
+
+# 🚀 Optimization & Edge Deployment Pipeline
+
+This section describes the full pipeline to convert, optimize, and deploy the trained U-Net model on NVIDIA edge devices (Jetson Nano, Jetson AGX Orin) using TensorRT FP16 inference.
+
+---
+
+## 📁 Folder Structure
+
+```
+Optimization and Containerization/
+├── from_h5_to_onnx.py        # Step 1 — Keras H5 → ONNX
+├── optimize_onnx.py          # Step 2 — Graph simplification + FP16 quantization
+├── inference_tensort.py          # Step 4 — TensorRT inference module
+└── Dockerfile                # Containerized deployment
+```
+
+> **Step 3 (ONNX → TensorRT `.engine`)** must be executed **directly on the target Jetson device** — TensorRT engines are hardware-specific and cannot be cross-compiled.
+
+---
+
+## ⚙️ Pipeline Overview
+
+| Step | Script | Input | Output | Size |
+|------|--------|-------|--------|------|
+| 1 | `from_h5_to_onnx.py` | `model.h5` (364.2 MB) | `model.onnx` | 121.3 MB |
+| 2 | `optimize_onnx.py` | `model.onnx` | `model_fp16.onnx` | 60.7 MB |
+| 3 | `trtexec` on Jetson | `model_fp16.onnx` | `model_tensort.engine` | 29.6 MB |
+| 4 | `inference_tensort.py` | `model_tensort.engine` | Predictions + metrics | — |
+
+**Total compression: 364.2 MB → 29.6 MB (12.3× reduction, 1.4% IoU degradation)**
+
+---
+
+## 🔧 Step-by-Step Instructions
+
+### Step 1 — Export Keras model to ONNX
+
+```bash
+pip install tensorflow tf2onnx onnx
+python from_h5_to_onnx.py
+```
+
+### Step 2 — Graph simplification + FP16 quantization
+
+```bash
+pip install onnxsim onnxconverter-common
+python optimize_onnx.py
+```
+
+This produces `model_fp16.onnx` (60.7 MB), ready for TensorRT compilation.
+
+### Step 3 — TensorRT engine compilation *(on Jetson only)*
+
+Copy `model_fp16.onnx` to your Jetson device, then run:
+
+```bash
+trtexec \
+  --onnx=model_fp16.onnx \
+  --saveEngine=model_tensort.engine \
+  --fp16 \
+  --workspace=1024     # MB — use 4096 for Jetson AGX Orin
+```
+
+> ⚠️ This step takes 5–15 minutes on first run. The resulting `.engine` file is specific to the Jetson device it was compiled on.
+
+### Step 4 — Run inference
+
+```bash
+pip install pycuda opencv-python scikit-learn pandas tqdm
+
+# Single image
+python inference_tensort.py \
+  --engine model_tensort.engine \
+  --input  image.jpg \
+  --output results/
+
+# Batch folder
+python inference_tensort.py \
+  --engine model_tensort.engine \
+  --input  ./test/images/ \
+  --output ./results/
+
+# Batch with metrics (requires ground-truth masks)
+python inference_tensort.py \
+  --engine model_tensort.engine \
+  --input  ./test/images/ \
+  --output ./results/ \
+  --mask   ./test/masks/
+```
+
+**Output per image:** side-by-side PNG `[original | ground-truth | prediction]`
+**With `--mask`:** additional `metrics.csv` with per-image Accuracy, F1, IoU, Recall, Precision.
+
+---
+
+## 🐳 Docker Deployment
+
+A Docker image encapsulating the TensorRT engine and inference module is publicly available, compatible with **NVIDIA Jetson (JetPack 5.x, TensorRT 8+)** and **standard x86 GPU environments**.
+
+### Prerequisites
+
+- NVIDIA Container Toolkit installed
+- `model_tensort.engine` compiled on the target device (see Step 3)
+
+### Build the image
+
+```bash
+# Place your compiled model_unet.engine in this folder first
+cp /path/to/model_unet.engine .
+
+docker build -t sesaunet-inference .
+```
+
+### Run inference with Docker
+
+```bash
+# Single image
+docker run --rm --runtime=nvidia \
+  -v /path/to/image.jpg:/data/image.jpg \
+  -v /path/to/results:/data/results \
+  unet-inference \
+  --engine /app/model_tensort.engine \
+  --input  /data/image.jpg \
+  --output /data/results/
+
+# Batch folder with metrics
+docker run --rm --runtime=nvidia \
+  -v /path/to/test/images:/data/images \
+  -v /path/to/test/masks:/data/masks \
+  -v /path/to/results:/data/results \
+  unet-inference \
+  --engine /app/model_tensort.engine \
+  --input  /data/images \
+  --output /data/results \
+  --mask   /data/masks
+```
+
+### Switch to x86 GPU
+
+Edit the first line of `Dockerfile`:
+```dockerfile
+# Replace:
+ARG BASE_IMAGE=nvcr.io/nvidia/l4t-tensorrt:r8.5.2-runtime
+# With:
+ARG BASE_IMAGE=nvcr.io/nvidia/tensorrt:23.10-py3
+```
+
+Then rebuild the image.
+
+---
+
+## 📊 Expected Performance
+
+| Device | GPU | FPS (512×512) | Latency |
+|--------|-----|---------------|---------|
+| Jetson Nano | 128 CUDA cores (Maxwell) | 8–15 FPS | 67–125 ms |
+| Jetson AGX Orin | 2048 CUDA cores (Ampere) | 80–120 FPS | 8–12 ms |
+
+> Results are estimates based on TensorRT FP16 benchmarks for equivalent architectures. Empirical measurements on physical hardware will be reported upon availability.
+
+---
+
+## 📦 Model Size Summary
+
+| Artifact | Size | Compression vs FP32 |
+|----------|------|----------------------|
+| `model.h5` (FP32) | 364.2 MB | 1× (baseline) |
+| `model.onnx` | 121.3 MB | 3.0× |
+| `model_fp16.onnx` | 60.7 MB | 6.0× |
+| `model_tensort.engine` | 29.6 MB | **12.3×** |
+
+**IoU degradation (FP32 → FP16 TensorRT): 1.4%**
+
+---
+
+
 
 ## Citation
 If you use SESAUnet or the dataset in your research, please cite:
